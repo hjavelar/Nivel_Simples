@@ -1,0 +1,92 @@
+Relação/Sugestão de tarefas relativas ao projeto
+/* Foi criado um Projeto no GitHub para gerenciamento das tarefas,
+ * possivelmente estes itens serão movidos para lá, a fim de acompanhar o andamento do projeto.
+ * (como Projects é uma ferramenta nova do GitHub, talvez seja interessate aprender)
+*/
+
+O simulador será desenvolvido pelos professores participantes e disponibilizado aos alunos para teste/feedback.
+A partir dos comentários dos alunos, o jogo de simulação será adaptado de forma a facilitar o uso do mesmo.
+A primeira versão do simulador será confeccionada durante as três primeiras semanas do projeto. 
+Logo em seguida, o simulador será disponibilizado aos alunos participantes, por meio de um repositório, 
+onde os alunos também poderão dar suas opiniões sobre o simulador, apontando dificuldades e dando sugestões de melhoria na “jogabilidade”. 
+Este processo será contínuo durante as demais semanas do projeto, até atingir a versão final para este projeto, na última semana. 
+Ao longo deste processo, serão tabeladas as opiniões dos alunos, que serão analisadas para posterior registro no relatório do projeto.
+
+Cronograma de atividades:
+Semanas                                           	1ª	2ª	3ª	4ª	5ª	6ª	7ª	8ª
+Desenvolvimento da versão inicial                   x	  x	  x					
+Disponibilização do simulador no repositório                    x	  x	  x	  x	
+Levantamento das sugestões dos alunos		                            x	  x	  x	
+Ajustes no simulador e atualização do repositório                   x	  x	  x	
+Análise dos comentários dos alunos			        		                x	  x	  x	  x
+
+
+===================================================================================================================================
+Tarefas a fazer:
+
+- Página inicial: 
+  -- Criar uma página inicial para o programa {sugestão: Foto do laboratório com tabels das plantas simuladas}
+  -- Criar um link da página inicial para cada planta {plantas: Nível (inicialmente apenas esta), Vazão, Pressão, Temperatura, Ph}
+  -- Criar um botão de saída do Labotório {sugestão: na maçaneta da porta}
+
+- Instrumentos de Uso Geral: {modelo pode ser aproveitado em mais de uma planta}
+  -- Criar um botão de saída da planta, retornando à página inicial
+  -- Criar a simulação do bloco conversor I/P:
+    --- relação linear com a válvula de controle
+    --- tempo de resposta nulo
+  -- Criar a simulação da válvula de controle pneumática:
+    --- inserir a curva de resposta da válvula {Trabalho apresentado na CEEL-UFU}
+    --- considerar tempo de resposta nulo
+  -- Criar a válvula manual de ar-comprido {para simular que o aluno deve abrir a vávlula para as plantas que necessitam de ar} 
+  -- Implementar a visualização gráfica dos sinais
+
+- Planta de Nível: 
+  -- Criar a simulação do reservatório:
+    --- volume dependente do volume do tanque superior: Vr = Vinicial - Vtanque
+    --- criar o instrumento visualizador do nível do reservatório 
+	--- implementar os LEDs de sinalização da planta
+
+- Planta de Vazão: {após finalizar a construção da Planta de Nível}
+  -- 
+- Planta de Pressão: {após finalizar a construção da Planta de Nível}
+  -- 
+- Planta de Temperatura: {após finalizar a construção da Planta de Nível}
+  -- 
+- Planta de Ph: {após finalizar a construção da Planta de Nível}
+  -- 
+
+
+===================================================================================================================================
+Tarefas em andamento:
+
+- Página inicial: 
+  -- 
+
+- Instrumentos de Uso Geral: {modelo pode ser aproveitado em mais de uma planta}
+  --
+
+- Planta de Nível: 
+  -- Criar a simulação do reservatório de nível {equação diferencial inserida na função Process}
+  -- Chave seletora altera com os comandos do usuário (dependente dos botões On/Off e Man/Auto)
+       --- Posições implementadas: Manual, Off, Automatico
+	   --- Posições que faltam: Controle Liga/Desliga, MSSR(não utilizado) e MINIREG(não utilizado)
+	 
+  -- Modo Automático: Controle PID da planta
+  -- Modo Manual: SetPoint varia a cada intervalo de 10 segundos 
+     (para que o usuário tente controlar a planta através do slider da vazão de entrada)
+
+
+
+===================================================================================================================================
+Tarefas finalizadas:
+
+- Página inicial: 
+  -- 
+
+- Instrumentos de Uso Geral: {modelo pode ser aproveitado em mais de uma planta}
+  -- Criar o botão de Liga/Desliga da parte eletrônica da planta {para simular que o aluno deve ligar o referido botão} 
+  --
+
+- Planta de Nível: 
+  -- 
+
