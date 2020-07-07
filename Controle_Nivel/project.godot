@@ -1,0 +1,54 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=4
+
+_global_script_classes=[ {
+"base": "Control",
+"class": "Chart",
+"language": "GDScript",
+"path": "res://addons/easy_charts/Utilities/Scripts/Chart.gd"
+}, {
+"base": "Node2D",
+"class": "Chart2D",
+"language": "GDScript",
+"path": "res://addons/easy_charts/Utilities/Scripts/Chart2D.gd"
+}, {
+"base": "Control",
+"class": "Point",
+"language": "GDScript",
+"path": "res://addons/easy_charts/Utilities/Point/Point.gd"
+}, {
+"base": "PanelContainer",
+"class": "PointData",
+"language": "GDScript",
+"path": "res://addons/easy_charts/Utilities/Point/PointData.gd"
+} ]
+_global_script_class_icons={
+"Chart": "",
+"Chart2D": "",
+"Point": "",
+"PointData": ""
+}
+
+[application]
+
+config/name="Controle_Nivel"
+run/main_scene="res://Controle_Nivel.tscn"
+boot_splash/bg_color=Color( 0.141176, 0.141176, 0.141176, 1 )
+config/icon="res://icon.png"
+
+[display]
+
+window/size/width=1280
+window/size/height=720
+
+[rendering]
+
+environment/default_clear_color=Color( 0.0117647, 0.454902, 0.537255, 1 )
+environment/default_environment="res://default_env.tres"
