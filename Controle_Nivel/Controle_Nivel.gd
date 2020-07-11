@@ -1,21 +1,41 @@
 extends Node
+# Simulador de controle de nível:
+# 
+# Modo Automático: - controlador PID ativado
+#                  - ajuste do SetPoint pelo slider SP
+# Modo Manual: - ajuste da vazão de entrada pelo slider MV
 
-# Constantes:
-const V_ENT_MAX = 1
-const VS_SAI_Y_MAX = 130
-const RECT_ALT_MAX = 270
-const MAX_NIVEL_POS = 434
+# Objetos utilizados:
+onready var Conteudo_nivel = $Planta_Nivel/Planta/Conteudo_Nivel
+onready var MV_Slider = $Controlador/ReferenceRect/Vazao_Entrada_VSlider
+onready var SP_Slider = $Controlador/ReferenceRect/SetPoint_VSlider
+onready var PV_PgBar = $Controlador/ReferenceRect/ProgressBar
+onready var VzSaida_PgBar = $Planta_Nivel/Vazao_saida
+onready var Manometro_pt = $Manometro_ponteiro
+onready var OnOff_plt_TxtBtn = $Planta_Nivel/Planta/OnOff_TextureButton
+onready var btn_seleciona = $Planta_Nivel/Planta/Chave_Seletora/btn_seleciona
+onready var OnOff_TxtBtn = $Controlador/ReferenceRect/btn_On_Off
+
+# Constantes: 
+#(levantamento feito na planta para determinação da curva de vazão da válvula 
+# pneumática, pelos alunos de Cálculo Numérico 2018: Davi, Leonardo, Marcos e Vitor)
+const V_ENT_MAX = 4000    # vazão máxima de entrada (4000 cm3/s ~~ 240 l/min)
+const MAX_NIVEL_POS = 395 # valor (em pixels) correspondente ao nível máximo permitido
+const ALTURA = 50  # altura máxima do nível no tanque (cm)
+const AREA = 115   # área do tanque (cm^2)
+const V_SAI_MAX = 0.25*V_ENT_MAX     # vazão máxima de saída (V_SAI_MAX < V_ENT_MAX)
+									 # (ToDo: medir a vazão máxima real)
+const REST_MIN  = sqrt(ALTURA)/V_SAI_MAX  # restrição mínima de saída,
+										  # corresponde à válvula 100% aberta
 
 # Variáveis:
-var crt_on = 0
-var auto_on = 0
-var altura = 3
-var area = 1
-var restricao = 2
-#var nivel = 0
-var vazao_saida = 0
-onready var Conteudo_nivel = $Planta_Nivel/ParallaxBackground/ParallaxLayer/Planta/Conteudo_Nivel
-export var nivel = 0 setget setNivel
+var crt_on = 0   # indica se a planta está ligada=1/desligada-0
+var auto_on = 0  # indica se a planta está no modo automático=1/manual=0
+# Considerando inicialmente o tanque cheio e válvula de saída 100% aberta, temos:
+var restricao = REST_MIN    # restrição da válvula manual de entrada (ToDo: acrescentar slider de ajuste)
+var vazao_saida = V_SAI_MAX # vazão de saída (cm3/s), varia em função do nível e da restrição na saída
+
+export var nivel = 0 setget setNivel  # nível de água no tanque
 # Variáveis do Controlador PID:
 var I = 0        # Saída do Integrador
 var P = 0        # Saída do Proporcional
@@ -29,28 +49,34 @@ var Ki = 1.0     # Ganho Integral
 var Kd = 0       # Ganho Derivativo
 var Ta = 0.1     # Intervalo de amostragem ### VERIFICAR COMPATIBILIDADE COM O delta
 var cont = 0     # Contador de ciclos [para ajuste automático do SP]
-# Called when the node enters the scene tree for the first time.
-func _ready():
-	$Controlador/ReferenceRect/Vazao_Entrada_VSlider.value = 0
 
-# Called every frame. 'delta' is the elapsed time since the previous frame.
+
+# Função chamada uma única vez, no início do programa:
+func _ready():
+	MV_Slider.value = 0
+
+
+# Função chamada a cada intervalo de tempo, igual a 'delta' segundos:
+# (o padrão é: delta = 1/60 segundos)
 func _process(delta):
-	var vazao
-	var VS_MAX = sqrt(altura)/restricao
-	var altera_SP = rand_range(0,100)
-	var DSeg = 10/delta # número de ciclos para contar 10segundos
+	var vazao  # vazão resultante: vazao = V_entrada - V_saida
+	var DSeg = 10/delta # número de ciclos para contar 10 segundos
 	
-	Ta = delta
 	cont += 1
+	# altera o SP aleatoriamente (se a planta estiver ligada e no Manual):
+	# (ToDo: retirar esta parte e transferir para a cena "Jogo")
 	if (crt_on==1 && auto_on==0 && cont>=DSeg):
 		cont = 0
-		# altera o SP aleatoriamente (se a planta estiver ligada e no Manual):
-		$Controlador/ReferenceRect/SetPoint_VSlider.value = rand_range(0,100)
+		SP_Slider.value = rand_range(0,100)
 	
-	Erro = $Controlador/ReferenceRect/SetPoint_VSlider.value - $Controlador/ReferenceRect/ProgressBar.value
-	if (crt_on && auto_on):  # Ligado no modo automático
+	# Considerando Ta=delta, teremos um controle aproximadamente contínuo:
+	Ta = delta
+	Erro = SP_Slider.value - PV_PgBar.value
+	if (crt_on && auto_on):  # Se estiver ligado no modo automático
 		I += Ki*(Erro+Eant)*delta/2.0 # Integral
-		# Limita a sída do Integrador:
+		if Ki==0: 	# zera a saída do integrador, caso Ki seja zerado
+			I = 0
+		# Limita a saída do Integrador:
 		if I>100:
 			I = 100
 		elif I<0:
@@ -64,65 +90,53 @@ func _process(delta):
 			PID = 100
 		elif I<0:
 			I = 0
-		$Controlador/ReferenceRect/Vazao_Entrada_VSlider.value = P+I+D
+		MV_Slider.value = P+I+D
 
 	# calcula o novo nível:
 	vazao_saida = sqrt(nivel)/restricao
-	$Planta_Nivel/Vazao_saida.value = VS_SAI_Y_MAX*vazao_saida/VS_MAX
-	$Manometro_ponteiro.rotation_degrees =  $Controlador/ReferenceRect/Vazao_Entrada_VSlider.value*0.01*270*crt_on
-	vazao = $Controlador/ReferenceRect/Vazao_Entrada_VSlider.value*0.01*V_ENT_MAX*crt_on - vazao_saida
-	self.nivel = clamp( nivel + vazao*delta/area, 0, altura)
-	$Controlador/ReferenceRect/ProgressBar.value = 100*nivel/altura
-#	$Planta_Nivel/ParallaxBackground/ParallaxLayer/Planta/Conteudo_Nivel.region_rect.size.y = 100*nivel/altura
-#	if Conteudo_nivel:
-#		Conteudo_nivel.region_rect.size.y = MAX_NIVEL_POS*self.nivel/altura
+	VzSaida_PgBar.value = 100*vazao_saida/V_SAI_MAX
+	Manometro_pt.rotation_degrees =  MV_Slider.value*0.01*270*crt_on
+	vazao = MV_Slider.value*0.01*V_ENT_MAX*crt_on - vazao_saida
+	self.nivel = clamp( nivel + vazao*delta/AREA, 0, ALTURA)
+	PV_PgBar.value = 100*nivel/ALTURA
+
 
 func setNivel(value:float):
 	nivel = value
 	if Conteudo_nivel:
-		Conteudo_nivel.region_rect.size.y = MAX_NIVEL_POS*0.91*value/altura # ajuste de 91% para coincidir com 100%
-
-
-func _on_CheckButton_toggled(button_pressed):
-	if button_pressed:
-		crt_on = 1
-		$Planta_Nivel/ParallaxBackground/ParallaxLayer/Planta/TextureButton.pressed = true
-		$Planta_Nivel/ParallaxBackground/ParallaxLayer/Planta/Chave_Seletora/btn_seleciona.rotation_degrees = 90*auto_on
-	else:
-		crt_on = 0
-		$Planta_Nivel/ParallaxBackground/ParallaxLayer/Planta/TextureButton.pressed = false
-		$Planta_Nivel/ParallaxBackground/ParallaxLayer/Planta/Chave_Seletora/btn_seleciona.rotation_degrees = 30
-
-func _on_btn_On_Off_toggled(button_pressed):
-	if button_pressed:
-		crt_on = 1
-		$Controlador/ReferenceRect/btn_On_Off.pressed = true
-		$Planta_Nivel/ParallaxBackground/ParallaxLayer/Planta/Chave_Seletora/btn_seleciona.rotation_degrees = 90*auto_on
-	else:
-		crt_on = 0
-		$Controlador/ReferenceRect/btn_On_Off.pressed = false
-		$Planta_Nivel/ParallaxBackground/ParallaxLayer/Planta/Chave_Seletora/btn_seleciona.rotation_degrees = 30
+		Conteudo_nivel.region_rect.size.y = MAX_NIVEL_POS*value/ALTURA
 
 
 func _on_btn_Man_Auto_toggled(button_pressed):
 	if button_pressed:
 		auto_on = 1 	# modo Automático
-		$Controlador/ReferenceRect/Vazao_Entrada_VSlider.editable = false
-		$Controlador/ReferenceRect/SetPoint_VSlider.editable = true
-		$Planta_Nivel/ParallaxBackground/ParallaxLayer/Planta/Chave_Seletora/btn_seleciona.rotation_degrees = 60*crt_on+30
+		MV_Slider.editable = false
+		SP_Slider.editable = true
+		btn_seleciona.rotation_degrees = 60*crt_on+30
 	else:
 		auto_on = 0 	# modo Manual
-		$Controlador/ReferenceRect/Vazao_Entrada_VSlider.editable = true
-		$Controlador/ReferenceRect/SetPoint_VSlider.editable = false
-		$Planta_Nivel/ParallaxBackground/ParallaxLayer/Planta/Chave_Seletora/btn_seleciona.rotation_degrees = 0 + (1-crt_on)*30
+		MV_Slider.editable = true
+		SP_Slider.editable = false
+		btn_seleciona.rotation_degrees = 0 + (1-crt_on)*30
 
 
-func _on_TextureButton_toggled(button_pressed):
-	if button_pressed:
+func _on_btn_On_Off_toggled(button_pressed):
+	if button_pressed: # Ligado
 		crt_on = 1
-		$Controlador/ReferenceRect/btn_On_Off.pressed = true
-		$Planta_Nivel/ParallaxBackground/ParallaxLayer/Planta/Chave_Seletora/btn_seleciona.rotation_degrees = 90*auto_on
-	else:
+		OnOff_plt_TxtBtn.pressed = true
+		btn_seleciona.rotation_degrees = 90*auto_on
+	else:              # Desligado
 		crt_on = 0
-		$Controlador/ReferenceRect/btn_On_Off.pressed = false
-		$Planta_Nivel/ParallaxBackground/ParallaxLayer/Planta/Chave_Seletora/btn_seleciona.rotation_degrees = 30
+		OnOff_plt_TxtBtn.pressed = false
+		btn_seleciona.rotation_degrees = 30
+
+
+func _on_OnOff_TextureButton_toggled(button_pressed):
+	if button_pressed: # Ligado
+		crt_on = 1
+		OnOff_TxtBtn.pressed = true
+		btn_seleciona.rotation_degrees = 90*auto_on
+	else:              # Desligado
+		crt_on = 0
+		OnOff_TxtBtn.pressed = false
+		btn_seleciona.rotation_degrees = 30
